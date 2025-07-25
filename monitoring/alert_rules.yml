@@ -1,0 +1,176 @@
+groups:
+  - name: mern-application
+    rules:
+      # Application Health Alerts
+      - alert: ApplicationDown
+        expr: up{job="mern-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MERN Backend Application is down"
+          description: "The MERN backend application has been down for more than 1 minute."
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="mern-backend"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for the last 5 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="mern-backend",status=~"5.."}[5m]) / rate(http_requests_total{job="mern-backend"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes."
+
+      # Database Alerts
+      - alert: MongoDBDown
+        expr: up{job="mongodb-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB has been down for more than 1 minute."
+
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections{state="current"} / mongodb_connections{state="available"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB high connection usage"
+          description: "MongoDB connection usage is {{ $value | humanizePercentage }}"
+
+      - alert: MongoDBSlowQueries
+        expr: rate(mongodb_op_counters_total{type="query"}[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB slow queries detected"
+          description: "MongoDB is experiencing {{ $value }} queries per second."
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+
+  - name: system-resources
+    rules:
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: LowDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+
+      - alert: HighDiskIOWait
+        expr: rate(node_cpu_seconds_total{mode="iowait"}[5m]) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk I/O wait"
+          description: "Disk I/O wait is {{ $value }}% on {{ $labels.instance }}"
+
+  - name: nginx-alerts
+    rules:
+      # Nginx Alerts
+      - alert: NginxDown
+        expr: up{job="nginx-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nginx is down"
+          description: "Nginx has been down for more than 1 minute."
+
+      - alert: NginxHighRequestRate
+        expr: rate(nginx_http_requests_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nginx high request rate"
+          description: "Nginx is handling {{ $value }} requests per second."
+
+      - alert: NginxHighErrorRate
+        expr: rate(nginx_http_requests_total{status=~"4..|5.."}[5m]) / rate(nginx_http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nginx high error rate"
+          description: "Nginx error rate is {{ $value | humanizePercentage }}"
+
+  - name: container-alerts
+    rules:
+      # Container Alerts
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value }}%"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""} * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container high memory usage"
+          description: "Container {{ $labels.name }} memory usage is {{ $value }}%"
+
+      - alert: ContainerRestarted
+        expr: increase(container_start_time_seconds{name!=""}[5m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container restarted"
+          description: "Container {{ $labels.name }} has been restarted"

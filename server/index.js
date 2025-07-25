@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
+const { collectHttpMetrics, metricsEndpoint, updateDatabaseMetrics, updateApplicationMetrics } = require('./middleware/metrics');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -63,6 +64,9 @@ if (process.env.NODE_ENV === 'production') {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Metrics collection middleware
+app.use(collectHttpMetrics);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -72,6 +76,9 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// Metrics endpoint
+app.get('/api/metrics', metricsEndpoint);
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -104,6 +111,17 @@ const connectDB = async () => {
     });
     
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
+    
+    // Update database metrics
+    updateDatabaseMetrics(mongoose);
+    
+    // Update application metrics every 30 seconds
+    const User = require('./models/User');
+    const Task = require('./models/Task');
+    setInterval(() => {
+      updateApplicationMetrics(User, Task);
+    }, 30000);
+    
   } catch (error) {
     logger.error('Database connection failed:', error);
     process.exit(1);

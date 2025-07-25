@@ -23,7 +23,8 @@
     "morgan": "^1.10.0",
     "winston": "^3.10.0",
     "express-validator": "^7.0.1",
-    "compression": "^1.7.4"
+    "compression": "^1.7.4",
+    "prom-client": "^14.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
