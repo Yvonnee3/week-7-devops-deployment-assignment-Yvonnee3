@@ -1,0 +1,22 @@
+{
+  "name": "mern-deployment-app",
+  "version": "1.0.0",
+  "description": "A full-stack MERN application with deployment and DevOps setup",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "test": "concurrently \"cd server && npm test\" \"cd client && npm test\"",
+    "lint": "concurrently \"cd server && npm run lint\" \"cd client && npm run lint\"",
+    "start": "cd server && npm start",
+    "heroku-postbuild": "cd client && npm install && npm run build"
+  },
+  "keywords": ["mern", "react", "node", "express", "mongodb", "deployment"],
+  "author": "Student",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
