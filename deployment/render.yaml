@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mern-backend
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    healthCheckPath: /api/health
+    
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard with your MongoDB Atlas connection string
