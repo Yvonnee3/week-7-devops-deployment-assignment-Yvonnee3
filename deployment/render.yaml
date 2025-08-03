@@ -1,0 +1,84 @@
+services:
+  - type: web
+    name: mern-backend
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    
+    # Auto-deploy settings
+    autoDeploy: true
+    branch: main
+    
+    # Environment variables (set these in Render dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false  # Set this manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true  # Render will generate a secure value
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRE
+        value: 30d
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: CORS_ORIGIN
+        sync: false  # Set to your frontend URL
+      - key: CORS_CREDENTIALS
+        value: true
+      - key: LOG_LEVEL
+        value: info
+      - key: LOG_FILE_MAX_SIZE
+        value: 20m
+      - key: LOG_FILE_MAX_FILES
+        value: 14d
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: UPLOAD_PATH
+        value: uploads/
+    
+    # Health check configuration
+    healthCheckPath: /api/health
+    healthCheckInterval: 30
+    healthCheckTimeout: 10
+    healthCheckThreshold: 3
+    
+    # Scaling configuration
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetCPUPercent: 70
+      targetMemoryPercent: 80
+    
+    # Disk storage
+    disk:
+      name: data
+      mountPath: /app/uploads
+      sizeGB: 1
+    
+    # Custom domains (optional)
+    # domains:
+    #   - your-api-domain.com
+    
+    # Build settings
+    buildFilter:
+      paths:
+        - server/**
+        - package.json
+        - package-lock.json
+      ignoredPaths:
+        - client/**
+        - docs/**
+        - .github/**
